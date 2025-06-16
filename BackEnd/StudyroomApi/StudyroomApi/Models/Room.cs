@@ -2,6 +2,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace StudyRoomAPI.Models
 {
+    // Enum para definir los tipos de sala
+    public enum RoomType
+    {
+        Grupal,
+        Individual
+    }
+
     public class Room
     {
         [Key]
@@ -20,5 +27,9 @@ namespace StudyRoomAPI.Models
 
         [Required]
         public string CreatorUsername { get; set; }
+
+        // --- RE-AÑADIDO: Propiedad para el tipo de sala ---
+        [Required] // Asegura que este campo siempre tenga un valor
+        public RoomType Type { get; set; }
     }
 }

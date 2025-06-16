@@ -12,6 +12,14 @@ namespace StudyRoomAPI.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Room> Rooms { get; set; }
 
-        // El método OnModelCreating (y el DbSet de Reservations) han sido eliminados.
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // --- RE-AÑADIDO: Configuración del enum RoomType para que se guarde como String ---
+            modelBuilder.Entity<Room>()
+                .Property(r => r.Type)
+                .HasConversion<string>(); // Convierte el enum a su nombre de string (ej. "Grupal", "Individual")
+        }
     }
 }

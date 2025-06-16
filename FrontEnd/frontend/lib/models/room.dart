@@ -27,16 +27,26 @@ class Room {
   factory Room.fromJson(Map<String, dynamic> json) {
     // Maneja el tipo que viene como int desde el backend
     // Si json['type'] es un int (0 o 1), lo mapea al RoomType correspondiente
-    // Si por alguna razón viene como String (ej. "Grupal"), también lo maneja (aunque la DB lo guarda como int)
+    // Si por alguna razón viene como String (ej. "Grupal" o "grupal"), también lo maneja
     RoomType parsedType;
     if (json['type'] is int) {
-      parsedType = RoomType.values[json['type'] as int]; // Mapea int a enum
+      // Esta rama se activaría si el backend guardara el enum como int.
+      parsedType = RoomType.values[json['type'] as int];
     } else if (json['type'] is String) {
-      // Caso de fallback si el backend envia el string (aunque no es lo que vemos ahora)
-      parsedType = (json['type'] as String).toLowerCase() == 'grupal' ? RoomType.grupal : RoomType.individual;
+      // Esta es la rama que debería activarse ahora que el backend guarda el enum como string.
+      // Compara el string de forma insensible a mayúsculas/minúsculas para la recepción.
+      String typeString = (json['type'] as String).toLowerCase();
+      if (typeString == 'grupal') {
+        parsedType = RoomType.grupal;
+      } else if (typeString == 'individual') {
+        parsedType = RoomType.individual;
+      } else {
+        // Valor por defecto o manejo de error si el tipo no es válido
+        parsedType = RoomType.grupal;
+      }
     } else {
-      // Valor por defecto o manejo de error si el tipo no es ni int ni String
-      parsedType = RoomType.grupal; // O RoomType.individual, o lanzar un error
+      // Valor por defecto si el tipo no es ni int ni String
+      parsedType = RoomType.grupal;
     }
 
     return Room(
@@ -51,13 +61,18 @@ class Room {
 
   // Método para convertir una instancia de Room a un mapa JSON
   Map<String, dynamic> toJson() {
+    // Convierte el enum a su nombre en string (ej. 'grupal' o 'individual')
+    String enumName = type.toString().split('.').last;
+    // Capitaliza la primera letra para que coincida con el backend (Grupal, Individual)
+    String capitalizedEnumName = enumName.substring(0, 1).toUpperCase() + enumName.substring(1);
+
     return {
       'id': id,
       'name': name,
       'capacity': capacity,
       'description': description,
       'creatorUsername': creatorUsername,
-      'type': type.index, // Envía el índice entero del enum al backend
+      'type': capitalizedEnumName, // <--- CAMBIO CLAVE: Envía el nombre del enum capitalizado
     };
   }
 }

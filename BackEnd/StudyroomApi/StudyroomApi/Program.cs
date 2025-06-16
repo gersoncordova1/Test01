@@ -1,10 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using StudyRoomAPI.Data;
+using System.Text.Json.Serialization; // ¡Necesario para JsonStringEnumConverter!
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // --- NUEVO: Configura el serializador JSON para enums como strings ---
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -13,22 +19,18 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// --- INICIO DE LA SECCIÓN DE CONFIGURACIÓN CORS MEJORADA PARA DESARROLLO ---
+// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
         policy =>
         {
-            // Permite cualquier origen que sea localhost, independientemente del puerto.
-            // Esto es ideal para desarrollo con Flutter Web donde los puertos cambian.
             policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
                 .AllowAnyHeader()
                 .AllowAnyMethod()
-                .AllowCredentials(); // Mantén esto si planeas usar cookies o autenticación basada en tokens (JWT)
+                .AllowCredentials();
         });
 });
-// --- FIN DE LA SECCIÓN DE CONFIGURACIÓN CORS MEJORADA PARA DESARROLLO ---
-
 
 var app = builder.Build();
 
@@ -40,7 +42,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseCors(); // Asegúrate de que UseCors() esté aquí antes de UseAuthorization()
+app.UseCors();
 app.UseAuthorization();
 
 app.MapControllers();
