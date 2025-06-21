@@ -15,7 +15,7 @@ namespace StudyRoomAPI.Data
         // DbSet para tu tabla de salas
         public DbSet<Room> Rooms { get; set; }
 
-        // --- NUEVO: DbSet para tu tabla de reservas ---
+        // DbSet para tu tabla de reservas
         public DbSet<Reservation> Reservations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

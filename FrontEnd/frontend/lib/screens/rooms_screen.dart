@@ -3,7 +3,8 @@ import 'package:studyroom_app/screens/auth_screen.dart';
 import 'package:studyroom_app/api_service.dart';
 import 'package:studyroom_app/models/room.dart';
 import 'package:studyroom_app/screens/create_room_screen.dart';
-import 'package:studyroom_app/screens/room_detail_screen.dart'; // ¡NUEVA IMPORTACIÓN!
+import 'package:studyroom_app/screens/room_detail_screen.dart';
+import 'package:studyroom_app/screens/my_reservations_screen.dart'; // ¡NUEVA IMPORTACIÓN!
 
 class RoomsScreen extends StatefulWidget {
   final String loggedInUsername;
@@ -64,18 +65,16 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
-        onTap: () async { // Hacemos el onTap asíncrono para esperar el resultado de la navegación
-          // Navega a la pantalla de detalle y pasa la sala, además del username logueado
+        onTap: () async {
           final bool? roomModified = await Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => RoomDetailScreen(
                 room: room,
-                loggedInUsername: widget.loggedInUsername, // Pasa el username
+                loggedInUsername: widget.loggedInUsername,
               ),
             ),
           );
-          // Si la sala fue modificada o eliminada, recarga la lista
           if (roomModified == true) {
             _fetchRooms();
           }
@@ -161,6 +160,19 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
         title: const Text('UPSA StudyRoom', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
+          // NUEVO: Botón para navegar a "My Reservations"
+          IconButton(
+            icon: const Icon(Icons.event_note, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MyReservationsScreen(loggedInUsername: widget.loggedInUsername),
+                ),
+              );
+            },
+            tooltip: 'My Reservations',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchRooms,

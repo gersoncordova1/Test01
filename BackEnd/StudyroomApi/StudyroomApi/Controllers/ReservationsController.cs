@@ -27,7 +27,8 @@ namespace StudyRoomAPI.Controllers
             // y ordenadas por la hora de inicio.
             return await _context.Reservations
                                  .Where(r => r.RoomId == roomId)
-                                 .Include(r => r.Room) // Asegúrate de incluir la sala relacionada AQUI TAMBIEN
+                                 .Include(r => r.Room) // Asegura que la sala relacionada se cargue
+                                 .AsNoTracking() // Añadido para ayudar en la serialización
                                  .OrderBy(r => r.StartTime)
                                  .ToListAsync();
         }
@@ -44,6 +45,7 @@ namespace StudyRoomAPI.Controllers
             return await _context.Reservations
                                  .Where(r => r.Username == username)
                                  .Include(r => r.Room) // Asegura que los datos de la sala relacionada se carguen
+                                 .AsNoTracking() // Añadido para ayudar en la serialización
                                  .OrderBy(r => r.StartTime)
                                  .ToListAsync();
         }
@@ -98,8 +100,8 @@ namespace StudyRoomAPI.Controllers
             _context.Reservations.Add(reservation);
             await _context.SaveChangesAsync();
 
-            // Retorna un 201 CreatedAtAction con la reserva creada y los datos de la sala.
-            // Es CRUCIAL cargar la propiedad de navegación Room aquí para que se serialice en la respuesta.
+            // Carga explícitamente la propiedad de navegación Room para la serialización.
+            // Esto es crucial para que se incluya en la respuesta 201 Created.
             await _context.Entry(reservation).Reference(r => r.Room).LoadAsync();
             return CreatedAtAction(nameof(GetReservationsByRoom), new { roomId = reservation.RoomId }, reservation);
         }
