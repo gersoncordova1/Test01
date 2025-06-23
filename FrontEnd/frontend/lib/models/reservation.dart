@@ -1,4 +1,4 @@
-import 'package:uuid/uuid.dart'; // Para generar IDs únicas si es necesario
+import 'package:uuid/uuid.dart';
 import 'package:studyroom_app/models/room.dart'; // Importa el modelo Room
 
 // Enum para definir el estado de una reserva en Flutter
@@ -21,7 +21,7 @@ class Reservation {
   Reservation({
     String? id, // ID opcional para nuevas reservas, se generará si es nulo
     required this.roomId,
-    this.room, // 'room' puede ser nulo si no se incluye en la respuesta (aunque ahora debería incluirse)
+    this.room, // 'room' puede ser nulo si no se incluye en la respuesta
     required this.username,
     required this.startTime,
     required this.endTime,
@@ -46,15 +46,19 @@ class Reservation {
         parsedStatus = ReservationStatus.confirmed; // Valor por defecto en caso de error
     }
 
+    // --- CAMBIO CLAVE AQUÍ: Eliminar .toUtc() al parsear las horas ---
+    // Las horas se parsean tal cual vienen del backend, sin forzar UTC.
+    DateTime finalStartTime = DateTime.parse(json['startTime'] as String);
+    DateTime finalEndTime = DateTime.parse(json['endTime'] as String);
+
     return Reservation(
       id: json['id'] as String,
       roomId: json['roomId'] as String,
       // Intenta parsear el objeto 'room' anidado si existe en el JSON
       room: json['room'] != null ? Room.fromJson(json['room']) : null,
       username: json['username'] as String,
-      // Parsea las cadenas de fecha/hora ISO 8601 a objetos DateTime
-      startTime: DateTime.parse(json['startTime'] as String),
-      endTime: DateTime.parse(json['endTime'] as String),
+      startTime: finalStartTime,
+      endTime: finalEndTime,
       status: parsedStatus,
     );
   }
@@ -67,7 +71,8 @@ class Reservation {
       'roomId': roomId,
       // 'room' no se envía al backend, ya que el backend lo carga por RoomId
       'username': username,
-      // Convierte DateTime a cadena ISO 8601 (formato que espera el backend)
+      // --- CAMBIO CLAVE AQUÍ: Eliminar .toUtc() al enviar las horas ---
+      // Las horas se envían tal cual fueron seleccionadas (horas locales).
       'startTime': startTime.toIso8601String(),
       'endTime': endTime.toIso8601String(),
       // Envía el nombre del enum de estado como string capitalizado (ej. "Confirmed")

@@ -46,62 +46,61 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   // Method to cancel a reservation
   Future<void> _cancelReservation(String reservationId) async {
     // Show a confirmation dialog before canceling
-    final bool confirm = await showDialog(
+    final bool confirmCancel = await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Cancellation'),
-        content: const Text('Are you sure you want to cancel this reservation?'),
+        backgroundColor: Colors.grey[850], // Fondo oscuro para el diálogo
+        title: const Text('Confirmar Cancelación', style: TextStyle(color: Colors.white)),
+        content: const Text('¿Estás seguro de que quieres cancelar esta reserva?', style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('No'),
+            onPressed: () => Navigator.pop(context, false), // No cancelar
+            child: const Text('No', style: TextStyle(color: Colors.tealAccent)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Yes'),
+            onPressed: () => Navigator.pop(context, true), // Confirmar cancelación
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Sí, Cancelar', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
-    ) ?? false;
+    ) ?? false; // En caso de que el diálogo se cierre sin selección
 
-    if (!confirm) return; // If user cancels, do nothing
+    if (confirmCancel) {
+      setState(() {
+        _isLoading = true; // Mostrar carga al cancelar
+      });
+      final result = await _apiService.cancelReservation(reservationId);
+      setState(() {
+        _isLoading = false; // Ocultar carga
+      });
 
-    setState(() {
-      _isLoading = true; // Show loading indicator
-      _errorMessage = null;
-    });
-
-    final result = await _apiService.cancelReservation(reservationId);
-
-    setState(() {
-      _isLoading = false; // Hide loading indicator
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'])),
+          const SnackBar(content: Text('Reserva cancelada exitosamente!'), backgroundColor: Colors.green),
         );
-        _fetchUserReservations(); // Refresh the list after cancellation
+        _fetchUserReservations(); // Recargar la lista de reservas
       } else {
-        _errorMessage = result['message'];
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${_errorMessage!}')),
+          SnackBar(content: Text('Error al cancelar: ${result['message']}'), backgroundColor: Colors.red),
         );
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Dark background
+      backgroundColor: Colors.black, // Fondo oscuro
       appBar: AppBar(
-        title: const Text('My Reservations', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.black, // Dark AppBar background
-        iconTheme: const IconThemeData(color: Colors.white), // White back icon
+        title: const Text('Mis Reservas', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        backgroundColor: Colors.black, // Fondo oscuro del AppBar
+        iconTheme: const IconThemeData(color: Colors.white), // Color del icono de retroceso
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchUserReservations,
-            tooltip: 'Refresh Reservations',
+            tooltip: 'Recargar mis reservas',
           ),
         ],
       ),
@@ -114,18 +113,18 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error, color: Colors.redAccent, size: 60),
+              const Icon(Icons.error, color: Colors.red, size: 60),
               const SizedBox(height: 15),
               Text(
-                'Error loading reservations: $_errorMessage',
+                'Error al cargar reservas: $_errorMessage',
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.redAccent, fontSize: 18),
+                style: const TextStyle(color: Colors.red, fontSize: 18),
               ),
               const SizedBox(height: 25),
               ElevatedButton.icon(
                 onPressed: _fetchUserReservations,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: const Text('Reintentar'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
@@ -142,18 +141,17 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.event_busy, size: 100, color: Colors.grey),
+            Icon(Icons.calendar_month, size: 100, color: Colors.grey),
             SizedBox(height: 20),
             Text(
-              'You have no active reservations.',
+              'No tienes reservas activas.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 20, color: Colors.white70),
             ),
-            SizedBox(height: 10),
             Text(
-              'Go to the "Study Rooms" tab to book one!',
+              '¡Explora las salas y haz una reserva!',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.white60),
+              style: TextStyle(fontSize: 16, color: Colors.white54),
             ),
           ],
         ),
@@ -163,68 +161,62 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         itemCount: _reservations.length,
         itemBuilder: (context, index) {
           final reservation = _reservations[index];
-          final room = reservation.room; // Get the nested Room object
+          // Determina si la reserva puede ser cancelada (si la hora de fin no ha pasado)
+          final bool canCancel = reservation.endTime.isAfter(DateTime.now());
 
-          // Determine status text and color
-          String statusText;
-          Color statusColor;
-          switch (reservation.status) {
-            case ReservationStatus.confirmed:
-              statusText = 'Confirmed';
-              statusColor = Colors.greenAccent;
-              break;
-            case ReservationStatus.cancelled:
-              statusText = 'Cancelled';
-              statusColor = Colors.redAccent;
-              break;
-            case ReservationStatus.completed:
-              statusText = 'Completed';
-              statusColor = Colors.orangeAccent;
-              break;
+          // Estilos basados en el estado de la reserva
+          Color cardColor = Colors.grey[850]!;
+          Color statusColor = Colors.tealAccent;
+          String statusText = 'Confirmada';
+          IconData statusIcon = Icons.check_circle_outline;
+
+          if (reservation.status == ReservationStatus.cancelled) {
+            cardColor = Colors.red[900]!;
+            statusColor = Colors.redAccent;
+            statusText = 'Cancelada';
+            statusIcon = Icons.cancel;
+          } else if (reservation.status == ReservationStatus.completed) {
+            cardColor = Colors.blueGrey[900]!;
+            statusColor = Colors.blueGrey;
+            statusText = 'Completada';
+            statusIcon = Icons.check_circle;
+          } else if (reservation.endTime.isBefore(DateTime.now())) {
+            // Si no está cancelada/completada pero ya pasó la hora, la marcamos visualmente como completada
+            cardColor = Colors.blueGrey[900]!;
+            statusColor = Colors.blueGrey;
+            statusText = 'Completada (Auto)'; // Para distinguir visualmente
+            statusIcon = Icons.check_circle;
           }
 
-          // Determine if cancellation is allowed (e.g., if it's confirmed and in the future)
-          final bool canCancel = reservation.status == ReservationStatus.confirmed &&
-              reservation.endTime.isAfter(DateTime.now());
+          // Asumiendo que la propiedad 'room' siempre viene incluida ahora
+          final room = reservation.room;
 
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 10.0),
+            color: cardColor,
             elevation: 6,
-            color: Colors.grey[850],
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
             child: Padding(
-              padding: const EdgeInsets.all(18.0),
+              padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Room Name and Type Icon
                       Expanded(
-                        child: Row(
-                          children: [
-                            Icon(
-                              room?.type == RoomType.grupal ? Icons.groups : Icons.person,
-                              color: Colors.tealAccent,
-                              size: 28,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                room?.name ?? 'Unknown Room', // Display room name
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          'Reserva en: ${room?.name ?? 'Sala Desconocida'}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      // Status Text
+                      Icon(statusIcon, color: statusColor, size: 24),
+                      const SizedBox(width: 8),
                       Text(
                         statusText,
                         style: TextStyle(
@@ -236,46 +228,32 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                     ],
                   ),
                   const SizedBox(height: 10),
-                  // Reservation Time
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time, color: Colors.blueGrey, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'From: ${reservation.startTime.toLocal().toShortDateString()} ${reservation.startTime.toLocal().toShortTimeString()}',
-                        style: const TextStyle(fontSize: 15, color: Colors.white70),
-                      ),
-                    ],
+                  Text(
+                    'Fecha: ${reservation.startTime.toShortDateString()}',
+                    style: const TextStyle(fontSize: 15, color: Colors.white70),
                   ),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time_filled, color: Colors.blueGrey, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        'To: ${reservation.endTime.toLocal().toShortDateString()} ${reservation.endTime.toLocal().toShortTimeString()}',
-                        style: const TextStyle(fontSize: 15, color: Colors.white70),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Hora: ${reservation.startTime.toShortTimeString()} - ${reservation.endTime.toShortTimeString()}',
+                    style: const TextStyle(fontSize: 15, color: Colors.white70),
                   ),
-                  const SizedBox(height: 10),
-                  // Room Description (if available)
+                  const SizedBox(height: 15),
                   if (room?.description != null && room!.description!.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
+                      padding: const EdgeInsets.only(bottom: 15.0),
                       child: Text(
-                        'Description: ${room.description!}',
+                        'Descripción: ${room.description!}',
                         style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white60),
                       ),
                     ),
-                  const SizedBox(height: 15),
-                  // Cancel Button
-                  if (canCancel)
+                  // Botón de Cancelar
+                  if (canCancel && reservation.status == ReservationStatus.confirmed) // Solo mostrar si puede cancelar y no está ya cancelada/completada
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton.icon(
                         onPressed: () => _cancelReservation(reservation.id),
                         icon: const Icon(Icons.cancel, color: Colors.white),
-                        label: const Text('Cancel Reservation', style: TextStyle(color: Colors.white)),
+                        label: const Text('Cancelar Reserva', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.redAccent,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -299,6 +277,8 @@ extension DateFormatting on DateTime {
   }
 
   String toShortTimeString() {
-    return '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+    // Aquí el cambio clave: aseguramos que la hora se convierta a local antes de formatear.
+    final localTime = this.toLocal();
+    return '${localTime.hour.toString().padLeft(2, '0')}:${localTime.minute.toString().padLeft(2, '0')}';
   }
 }

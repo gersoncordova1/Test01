@@ -58,10 +58,17 @@ class ApiService {
       if (response.statusCode == 201) {
         return {'success': true, 'data': Room.fromJson(jsonDecode(response.body))};
       } else {
-        return {'success': false, 'message': jsonDecode(response.body)['title'] ?? 'Error creating room'};
+        String? errorMessage;
+        try {
+          final errorJson = jsonDecode(response.body);
+          errorMessage = errorJson['message'] ?? errorJson['title'] ?? (errorJson.containsKey('errors') ? (errorJson['errors'].values.expand((e) => e as List).join('; ')) : null);
+        } catch (e) {
+          errorMessage = 'Server error: ${response.statusCode}';
+        }
+        return {'success': false, 'message': errorMessage ?? 'Error al crear sala'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
 
@@ -78,10 +85,10 @@ class ApiService {
         List<Room> rooms = roomsJson.map((json) => Room.fromJson(json)).toList();
         return {'success': true, 'data': rooms};
       } else {
-        return {'success': false, 'message': 'Error getting rooms'};
+        return {'success': false, 'message': 'Error al obtener salas'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
 
@@ -96,12 +103,12 @@ class ApiService {
       if (response.statusCode == 200) {
         return {'success': true, 'data': Room.fromJson(jsonDecode(response.body))};
       } else if (response.statusCode == 404) {
-        return {'success': false, 'message': 'Room not found'};
+        return {'success': false, 'message': 'Sala no encontrada'};
       } else {
-        return {'success': false, 'message': 'Error getting room'};
+        return {'success': false, 'message': 'Error al obtener sala'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
 
@@ -115,14 +122,21 @@ class ApiService {
       final response = await http.put(url, headers: headers, body: body);
 
       if (response.statusCode == 204) {
-        return {'success': true, 'message': 'Room updated successfully'};
+        return {'success': true, 'message': 'Sala actualizada con éxito'};
       } else if (response.statusCode == 404) {
-        return {'success': false, 'message': 'Room not found for update'};
+        return {'success': false, 'message': 'Sala no encontrada para actualizar'};
       } else {
-        return {'success': false, 'message': jsonDecode(response.body)['title'] ?? 'Error updating room'};
+        String? errorMessage;
+        try {
+          final errorJson = jsonDecode(response.body);
+          errorMessage = errorJson['message'] ?? errorJson['title'] ?? (errorJson.containsKey('errors') ? (errorJson['errors'].values.expand((e) => e as List).join('; ')) : null);
+        } catch (e) {
+          errorMessage = 'Server error: ${response.statusCode}';
+        }
+        return {'success': false, 'message': errorMessage ?? 'Error al actualizar sala'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
 
@@ -134,11 +148,11 @@ class ApiService {
       final response = await http.delete(url);
 
       if (response.statusCode == 204) {
-        return {'success': true, 'message': 'Room deleted successfully'};
+        return {'success': true, 'message': 'Sala eliminada con éxito'};
       } else if (response.statusCode == 404) {
-        return {'success': false, 'message': 'Room not found for deletion'};
+        return {'success': false, 'message': 'Sala no encontrada para eliminar'};
       } else {
-        return {'success': false, 'message': jsonDecode(response.body)['title'] ?? 'Error deleting room'};
+        return {'success': false, 'message': jsonDecode(response.body)['title'] ?? 'Error al eliminar sala'};
       }
     } catch (e) {
       return {'success': false, 'message': 'Connection error: $e'};
@@ -192,8 +206,6 @@ class ApiService {
       final response = await http.get(url, headers: headers);
 
       if (response.statusCode == 200) {
-        // Since the backend now sends a list of reservations with nested Room objects,
-        // we map each JSON object to a Reservation model.
         List<dynamic> reservationsJson = jsonDecode(response.body);
         List<Reservation> reservations = reservationsJson.map((json) => Reservation.fromJson(json)).toList();
         return {'success': true, 'data': reservations};
@@ -218,10 +230,10 @@ class ApiService {
         List<Reservation> reservations = reservationsJson.map((json) => Reservation.fromJson(json)).toList();
         return {'success': true, 'data': reservations};
       } else {
-        return {'success': false, 'message': 'Error getting room reservations'};
+        return {'success': false, 'message': 'Error al obtener reservas de la sala'};
       }
     } catch (e) {
-      return {'success': false, 'message': 'Connection error: $e'};
+      return {'success': false, 'message': 'Error de conexión: $e'};
     }
   }
 
@@ -237,7 +249,6 @@ class ApiService {
       } else if (response.statusCode == 404) {
         return {'success': false, 'message': 'Reservation not found for cancellation'};
       } else {
-        // Handle other error codes, similar to createReservation
         String? errorMessage;
         try {
           final errorJson = jsonDecode(response.body);

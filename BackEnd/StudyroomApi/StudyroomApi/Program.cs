@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StudyRoomAPI.Data;
+using System.Text.Json; // Necesario para JsonSerializerOptions
 using System.Text.Json.Serialization; // Necesario para JsonStringEnumConverter
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,9 +10,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         // Configura el serializador JSON para enums como strings
+        // Mantenemos esta configuración porque es útil para RoomType y ReservationStatus.
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        // Opcional: para una mejor legibilidad en desarrollo, puedes añadir Indented:
-        options.JsonSerializerOptions.WriteIndented = true; // Descomenta si quieres el JSON formateado
+        // *** SE HA ELIMINADO: CustomDateTimeConverter ya no se registra aquí ***
     });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -21,7 +22,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Configure CORS (versión flexible para desarrollo)
+// Configure CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(
@@ -50,3 +51,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// *** SE HA ELIMINADO LA DEFINICIÓN DE LA CLASE CustomDateTimeConverter ***
+// Esta clase ya no es necesaria con la nueva estrategia de manejo de fechas/horas.

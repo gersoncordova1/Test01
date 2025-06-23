@@ -49,6 +49,12 @@ namespace StudyRoomAPI.Controllers
         [HttpPost]
         public async Task<ActionResult<Room>> CreateRoom([FromBody] Room room)
         {
+            // --- NUEVA VALIDACIÓN: Capacidad para cubículos individuales ---
+            if (room.Type == RoomType.Individual && room.Capacity != 1)
+            {
+                return BadRequest(new { message = "Un cubículo individual debe tener una capacidad de 1 persona." });
+            }
+
             // Genera un nuevo ID para la sala
             room.Id = Guid.NewGuid();
 
@@ -71,6 +77,12 @@ namespace StudyRoomAPI.Controllers
             if (id != room.Id)
             {
                 return BadRequest(new { message = "El ID de la sala en la URL no coincide con el ID en el cuerpo de la solicitud." });
+            }
+
+            // --- NUEVA VALIDACIÓN: Capacidad para cubículos individuales al actualizar ---
+            if (room.Type == RoomType.Individual && room.Capacity != 1)
+            {
+                return BadRequest(new { message = "Un cubículo individual debe tener una capacidad de 1 persona." });
             }
 
             // Marca la sala como modificada para que EF Core la actualice

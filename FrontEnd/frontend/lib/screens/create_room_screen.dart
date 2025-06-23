@@ -25,6 +25,14 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   // Método para crear la sala
   Future<void> _createRoom() async {
     if (_formKey.currentState!.validate()) {
+      // --- VALIDACIÓN FRONTEND: Cubículo Individual debe tener Capacidad 1 ---
+      if (_selectedRoomType == RoomType.individual && int.parse(_capacityController.text.trim()) != 1) {
+        setState(() {
+          _errorMessage = 'Un Cubículo Individual debe tener una capacidad de 1 persona.';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _errorMessage = null;
@@ -80,25 +88,25 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           key: _formKey,
           child: ListView(
             children: <Widget>[
-              const Icon(Icons.add_business_outlined, size: 80, color: Colors.tealAccent), // Icono con color
+              const Icon(Icons.add_business_outlined, size: 80, color: Colors.tealAccent),
               const SizedBox(height: 20),
 
               TextFormField(
                 controller: _nameController,
-                style: const TextStyle(color: Colors.white), // Texto de entrada blanco
+                style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Nombre de la Sala',
                   hintText: 'Ej. Sala de concentración',
-                  labelStyle: const TextStyle(color: Colors.white70), // Color del label
-                  hintStyle: const TextStyle(color: Colors.white54), // Color del hint
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  hintStyle: const TextStyle(color: Colors.white54),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                  enabledBorder: OutlineInputBorder( // Borde normal
+                  enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
                     borderSide: const BorderSide(color: Colors.white70),
                   ),
-                  focusedBorder: OutlineInputBorder( // Borde cuando está en foco
+                  focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Colors.tealAccent), // Color de foco
+                    borderSide: const BorderSide(color: Colors.tealAccent),
                   ),
                   prefixIcon: const Icon(Icons.meeting_room, color: Colors.tealAccent),
                 ),
@@ -138,6 +146,11 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                   if (int.tryParse(value.trim()) == null || int.parse(value.trim()) <= 0) {
                     return 'Por favor ingrese un número válido mayor que 0';
                   }
+                  // --- VALIDACIÓN FRONTEND: Cubículo Individual debe tener Capacidad 1 ---
+                  // Esta validación también se hace en el método _createRoom, pero es bueno tenerla aquí para feedback inmediato.
+                  if (_selectedRoomType == RoomType.individual && int.tryParse(value.trim()) != 1) {
+                    return 'Los cubículos individuales deben tener capacidad 1.';
+                  }
                   return null;
                 },
               ),
@@ -158,25 +171,34 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       children: [
                         Expanded(
                           child: RadioListTile<RoomType>(
-                            title: const Text('Grupal', style: TextStyle(color: Colors.white)),
+                            title: const Text('Mesa Grupal', style: TextStyle(color: Colors.white)), // Nombre cambiado
                             value: RoomType.grupal,
                             groupValue: _selectedRoomType,
                             onChanged: (RoomType? value) {
                               setState(() {
                                 _selectedRoomType = value!;
+                                // Si cambia a Grupal, limpiar el mensaje de error de capacidad
+                                if (_errorMessage != null && _errorMessage!.contains('capacidad de 1 persona')) {
+                                  _errorMessage = null;
+                                }
                               });
                             },
-                            activeColor: Colors.tealAccent, // Color cuando está seleccionado
+                            activeColor: Colors.tealAccent,
                           ),
                         ),
                         Expanded(
                           child: RadioListTile<RoomType>(
-                            title: const Text('Individual', style: TextStyle(color: Colors.white)),
+                            title: const Text('Cubículo Individual', style: TextStyle(color: Colors.white)), // Nombre cambiado
                             value: RoomType.individual,
                             groupValue: _selectedRoomType,
                             onChanged: (RoomType? value) {
                               setState(() {
                                 _selectedRoomType = value!;
+                                // Si cambia a Individual, forzar capacidad a 1
+                                if (_capacityController.text.trim() != '1') {
+                                  _capacityController.text = '1';
+                                  _errorMessage = 'La capacidad de un cubículo individual se ha ajustado a 1.';
+                                }
                               });
                             },
                             activeColor: Colors.tealAccent,
@@ -235,7 +257,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     : const Icon(Icons.save),
                 label: Text(_isLoading ? 'Creando...' : 'Crear Sala'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal, // Color del botón
+                  backgroundColor: Colors.teal,
                   foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(55),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

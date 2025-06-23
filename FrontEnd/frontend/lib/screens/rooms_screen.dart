@@ -4,7 +4,7 @@ import 'package:studyroom_app/api_service.dart';
 import 'package:studyroom_app/models/room.dart';
 import 'package:studyroom_app/screens/create_room_screen.dart';
 import 'package:studyroom_app/screens/room_detail_screen.dart';
-import 'package:studyroom_app/screens/my_reservations_screen.dart'; // ¡NUEVA IMPORTACIÓN!
+import 'package:studyroom_app/screens/my_reservations_screen.dart';
 
 class RoomsScreen extends StatefulWidget {
   final String loggedInUsername;
@@ -124,6 +124,14 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
                   ),
                 ],
               ),
+              // --- CAMBIO: Mostrar tipo de sala con los nuevos nombres ---
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  room.type == RoomType.grupal ? 'Tipo: Mesa Grupal' : 'Tipo: Cubículo Individual',
+                  style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.white60),
+                ),
+              ),
               if (room.description != null && room.description!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
@@ -160,7 +168,6 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
         title: const Text('UPSA StudyRoom', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         centerTitle: true,
         actions: [
-          // NUEVO: Botón para navegar a "My Reservations"
           IconButton(
             icon: const Icon(Icons.event_note, color: Colors.white),
             onPressed: () {
@@ -171,7 +178,7 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
                 ),
               );
             },
-            tooltip: 'My Reservations',
+            tooltip: 'Mis Reservas', // Tooltip actualizado
           ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
@@ -195,8 +202,8 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white60,
           tabs: const [
-            Tab(text: 'Cubículos Grupales', icon: Icon(Icons.groups)),
-            Tab(text: 'Cubículos Individuales', icon: Icon(Icons.person)),
+            Tab(text: 'Mesas Grupales', icon: Icon(Icons.groups)), // Nombres cambiados
+            Tab(text: 'Cubículos Individuales', icon: Icon(Icons.person)), // Nombres cambiados
           ],
         ),
       ),
@@ -209,7 +216,7 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
               ? Center(child: Text('Error: $_errorMessage', style: const TextStyle(color: Colors.red)))
               : groupRooms.isEmpty
               ? const Center(
-            child: Text('No hay cubículos grupales disponibles.', style: TextStyle(color: Colors.white70, fontSize: 16)),
+            child: Text('No hay Mesas Grupales disponibles.', style: TextStyle(color: Colors.white70, fontSize: 16)), // Nombres cambiados
           )
               : ListView.builder(
             itemCount: groupRooms.length,
@@ -223,7 +230,7 @@ class _RoomsScreenState extends State<RoomsScreen> with SingleTickerProviderStat
               ? Center(child: Text('Error: $_errorMessage', style: const TextStyle(color: Colors.red)))
               : individualRooms.isEmpty
               ? const Center(
-            child: Text('No hay cubículos individuales disponibles.', style: TextStyle(color: Colors.white70, fontSize: 16)),
+            child: Text('No hay Cubículos Individuales disponibles.', style: TextStyle(color: Colors.white70, fontSize: 16)), // Nombres cambiados
           )
               : ListView.builder(
             itemCount: individualRooms.length,
